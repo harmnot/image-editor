@@ -1,0 +1,38 @@
+.fileWrapper {
+    @apply h-64;
+    @apply flex;
+    @apply items-center;
+    @apply flex-col;
+    @apply w-64;
+    @apply cursor-pointer;
+
+    background: transparent;
+    border: 2px dashed #e0e0e0;
+    border-radius: 5px;
+}
+
+.fileWrapper:hover {
+    transition: all 0.3s ease;
+    border-color: #c1baba;
+}
+
+.fileWrapper .boxTitle {
+    @apply flex;
+    @apply flex-col;
+    @apply my-auto;
+    @apply items-center;
+}
+
+.fileWrapper .boxTitle span {
+    @apply font-semibold;
+}
+
+.fileWrapper .boxTitle small {
+    @apply text-gray-500;
+}
+
+.error {
+    @apply mt-2;
+    @apply text-red-500;
+    @apply text-sm;
+}
