@@ -6,15 +6,17 @@ import { useState, useRef } from 'react';
 export default function Home() {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
-  const [imgSrc, setImgSrc] = useState(null);
+  const [imgSrc, setImgSrc] = useState('');
   const [redVal, setRedVal] = useState(0);
   const [blueVal, setBlueVal] = useState(0);
   // Store timeout id
   const [timeoutId, setTimeoutId] = useState(null);
 
   const applyFilter = (srcImage: HTMLImageElement): void => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    if (canvasRef.current === null) return;
+
+    const canvas = canvasRef.current as HTMLCanvasElement;
+    const ctx: CanvasRenderingContext2D = canvas.getContext('2d') as CanvasRenderingContext2D;
 
     // set canvas dimensions
     canvas.width = srcImage.width;
@@ -38,10 +40,12 @@ export default function Home() {
     ctx.putImageData(imageData, 0, 0);
 
     // Update the preview image
-    imageRef.current.src = canvas.toDataURL('image/jpeg');
+    if (imageRef.current === null) return;
+    const img = imageRef.current as HTMLImageElement;
+    img.src = canvas.toDataURL('image/jpeg');
   }
 
-  const handleRangeChange = (event, color) => {
+  const handleRangeChange = (event: React.ChangeEvent<HTMLInputElement>, color: 'red' | 'blue') => {
     const value = parseInt(event.target.value);
     if (color === 'red') setRedVal(value);
     if (color === 'blue') setBlueVal(value);
@@ -53,25 +57,29 @@ export default function Home() {
     }
 
     // Set new timeout
-    const newTimeoutId = setTimeout(() => {
+    const newTimeoutId: NodeJS.Timeout = setTimeout(() => {
       loadImage(imgSrc, applyFilter);
-    }, 200); // 500 millisecond delay
+    }, 500); // 500 millisecond delay
 
-    setTimeoutId(newTimeoutId);
+    setTimeoutId(newTimeoutId as any);
   }
 
-  const loadImage = (src, callback) => {
+  type ImageCallback = (img: HTMLImageElement) => void;
+
+  const loadImage = (src: string | ArrayBuffer, callback: ImageCallback) => {
     const img = new Image();
     img.onload = () => callback(img);
-    img.src = src;
+    if (typeof src === "string") {
+      img.src = src;
+    }
   }
 
   const handleFileSelect = (file: File) => {
     const reader = new FileReader();
 
     reader.onloadend = () => {
-      setImgSrc(reader.result)
-      loadImage(reader.result, applyFilter);
+      setImgSrc(reader.result as string)
+      loadImage(reader.result as string, applyFilter);
     };
 
     reader.readAsDataURL(file);
@@ -80,62 +88,20 @@ export default function Home() {
   const handleImageExport = () => {
     const link = document.createElement('a');
     link.download = `output_warm-${percentRed}%__cool-${percentBlue}%.jpeg`;
-    link.href = imageRef.current.src;
+    if (imageRef.current === null) return;
+    const imgRef: HTMLImageElement = imageRef.current as HTMLImageElement;
+    link.href = imgRef.src;
     link.click();
   }
 
   const resetImage = () => {
-    setImgSrc(null);
+    setImgSrc('');
     setRedVal(0);
     setBlueVal(0);
   }
 
   const percentRed = Math.round((redVal / 255) * 100);
   const percentBlue = Math.round((blueVal / 255) * 100);
-
-  const FilterImage = () => {
-    return (
-      <section className={'filter'}>
-        <div className={'flex flex-col'}>
-          <label>Warmer </label>
-          <div>
-            <input
-              className={'inputRange'}
-              type='range'
-              min='0'
-              max='255'
-              value={redVal}
-              onChange={(event) => handleRangeChange(event, 'red')}
-              style={{
-                background: `linear-gradient(90deg, red ${percentRed}%, #ccc ${percentRed}%)`
-              }}
-            />
-          </div>
-          <small>{percentRed}%</small>
-        </div>
-
-        <div className={'flex flex-col mt-5'}>
-          <label>Cooler </label>
-          <div>
-            <input
-              className={'inputRange'}
-              type='range'
-              min='0'
-              max='255'
-              value={blueVal}
-              onChange={(event) => handleRangeChange(event, 'blue')}
-              style={{
-                background: `linear-gradient(90deg, blue ${percentBlue}%, #ccc ${percentBlue}%)`
-              }}
-            />
-          </div>
-          <small>{percentBlue}%</small>
-        </div>
-        <button className={'button'} onClick={handleImageExport}>Export
-        </button>
-      </section>
-    )
-  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center">
@@ -149,7 +115,47 @@ export default function Home() {
               <img width="400" ref={imageRef} alt=""/>
             </>
         }
-        {imgSrc && <FilterImage/>}
+        {imgSrc && (
+          <section className={'filter'}>
+            <div className={'flex flex-col'}>
+              <label>Warmer </label>
+              <div>
+                <input
+                  className={'inputRange'}
+                  type='range'
+                  min='0'
+                  max='255'
+                  value={redVal}
+                  onChange={(event) => handleRangeChange(event, 'red')}
+                  style={{
+                    background: `linear-gradient(90deg, red ${percentRed}%, #ccc ${percentRed}%)`
+                  }}
+                />
+              </div>
+              <small>{percentRed}%</small>
+            </div>
+
+            <div className={'flex flex-col mt-5'}>
+              <label>Cooler </label>
+              <div>
+                <input
+                  className={'inputRange'}
+                  type='range'
+                  min='0'
+                  max='255'
+                  value={blueVal}
+                  onChange={(event) => handleRangeChange(event, 'blue')}
+                  style={{
+                    background: `linear-gradient(90deg, blue ${percentBlue}%, #ccc ${percentBlue}%)`
+                  }}
+                />
+              </div>
+              <small>{percentBlue}%</small>
+            </div>
+            <button className={'button'} onClick={handleImageExport}>Export
+            </button>
+          </section>
+        )}
       </div>
     </main>
   )
